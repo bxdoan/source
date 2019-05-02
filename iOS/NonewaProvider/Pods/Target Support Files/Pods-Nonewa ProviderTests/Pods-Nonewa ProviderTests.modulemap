@@ -1,0 +1,6 @@
+framework module Pods_Nonewa_ProviderTests {
+  umbrella header "Pods-Nonewa ProviderTests-umbrella.h"
+
+  export *
+  module * { export * }
+}

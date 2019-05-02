@@ -1,0 +1,611 @@
+-module(answer).
+-author(xphulie).
+-export([%% part1: basic
+         collatz/1, collatz_v2/1,
+         longest_collatz/2,
+         element_reverse/1,
+         remove_duplicate/1,
+         skeleton_v1/1, skeleton_v2/1, skeleton_v3/1, skeleton_v4/1,
+         eliminate/2, eliminate_v2/2,
+         quicksort/1,
+         sqrt/1,
+         sqrt_plus/1,
+         zap_gremlins/1,
+         rot_13/1,
+
+         %% part2: advance
+         tree/1,
+         neighbor_merge/1,
+         percent/1, percent/2,
+
+         %% part3: processes
+         start_ring/2,
+         math/0,
+
+         %% check performance
+         check_perf/3,
+         compare_perf/4,
+         my_foldl/3, my_foldl/4
+        ]).
+
+%% -----------------------------------------------------------------------------
+%% collatz/1
+%%
+%% Desc: Defined for positive integers n. Returns a list starting with N.
+%%       Each subsequent value is computed from the previous value according
+%%       to this rule:
+%%       * The list ends with 1.
+%%       * Every even number is followed by N / 2
+%%       * Every odd number (except 1) is followed by (3 * N) + 1
+%% -----------------------------------------------------------------------------
+-spec collatz(Integer) -> ConjectureList when
+      Integer :: pos_integer(),
+      ConjectureList :: [pos_integer()].
+collatz(Integer) ->
+    collatz(Integer, []).
+
+%% the ++ and -- operators are expensive, try to avoid it :)
+collatz(Integer, Result) when Integer == 1 -> Result ++ [1];
+collatz(Integer, TResult) when Integer rem 2 == 0 ->
+    collatz(Integer div 2, TResult ++ [Integer]);
+collatz(Integer, TResult) ->
+    collatz(Integer * 3 + 1, TResult ++ [Integer]).
+
+collatz_v2(1) -> [1];
+collatz_v2(Integer) when Integer rem 2 == 0 ->
+    [Integer | collatz_v2(Integer div 2)];
+collatz_v2(Integer) ->
+    [Integer | collatz_v2(Integer * 3 + 1)].
+
+%% -----------------------------------------------------------------------------
+%% longest_collatz/1
+%%
+%% Desc: Find which starting value, in the range Lo to Hi
+%%       (including both end points) takes the longest to converge.
+%%       If two values take equally long to converge, return either value.
+%% -----------------------------------------------------------------------------
+-spec longest_collatz(From, To) -> {Longest, List} when
+      From :: pos_integer(),
+      To :: pos_integer(),
+      Longest :: pos_integer(),
+      List :: [pos_integer()].
+longest_collatz(From, To) when From > To -> exit(bad_input);
+longest_collatz(Same, Same) -> [Same];
+longest_collatz(From, To) -> longest_collatz(From, To, 0, []).
+
+longest_collatz(From, To, Longest, Result) when From > To ->
+    {Longest, Result};
+longest_collatz(From, To, Longest, TResult) ->
+    %% Len = length(collatz(From)),
+    %% Try to un-commented above line and use
+    %% timer:tc(erlang_exercise_answer, longest_collatz, [1, 100000])
+    %% to determine the executed time. You will be suprised :)
+    Len = find_collatz_length(From, 0),
+    if
+        Len < Longest ->
+            longest_collatz(From + 1, To, Longest, TResult);
+        Len > Longest ->
+            %% io:format("From: ~p, Length: ~p~n", [From, Len]),
+            %% Try to un-commented above line to see the recursive works :)
+            longest_collatz(From + 1, To, Len, [From]);
+        true ->
+            longest_collatz(From + 1, To, Longest, TResult ++ [From])
+    end.
+
+find_collatz_length(1, Step) -> Step + 1;
+find_collatz_length(Integer, Step) when Integer rem 2 == 0 ->
+    find_collatz_length(Integer div 2, Step + 1);
+find_collatz_length(Integer, Step) ->
+    find_collatz_length(Integer * 3 + 1, Step + 1).
+
+%% -----------------------------------------------------------------------------
+%% element_reverse/1
+%%
+%% Desc: Reverse the elements but the positions of sub-lists are kept.
+%% -----------------------------------------------------------------------------
+-spec element_reverse(List) -> ReversedList when
+      List :: list(),
+      ReversedList :: list().
+element_reverse(List) ->
+    Elems = get_reverse_elems(List, []),
+    io:format("~p~n", [Elems]),
+    {Result, _} = element_reverse(List, Elems, []),
+    Result.
+
+get_reverse_elems([Head | Tail], TResult) when is_list(Head) ->
+    NResult = get_reverse_elems(Head, []) ++ TResult,
+    get_reverse_elems(Tail, NResult);
+get_reverse_elems([Head | Tail], TResult) ->
+    get_reverse_elems(Tail, [Head | TResult]);
+get_reverse_elems([], Result) -> Result.
+
+element_reverse([Head | Tail], Elems, TResult) when is_list(Head) ->
+    {Result, Remain} = element_reverse(Head, Elems, []),
+    NResult = TResult ++ [Result],
+    element_reverse(Tail, Remain, NResult);
+element_reverse([_Head | Tail], [HElem | TElem], TResult) ->
+    element_reverse(Tail, TElem, TResult ++ [HElem]);
+element_reverse([], Remain, Result) -> {Result, Remain}.
+
+%% -----------------------------------------------------------------------------
+%% remove_duplicate/1
+%%
+%% Desc: Removes duplicate elements of List, the order of elements must be kept.
+%% -----------------------------------------------------------------------------
+-spec remove_duplicate(List) -> NewList when
+      List :: list(),
+      NewList :: list().
+remove_duplicate([Head | Tail]) ->
+    [Head | [Try || Try <- remove_duplicate(Tail), Try /= Head]];
+remove_duplicate([])-> [].
+
+%% -----------------------------------------------------------------------------
+%% skeleton/1
+%%
+%% Desc: Removes all the non-list elements of list List, but retains all the
+%%       list structure (the brackets).
+%% -----------------------------------------------------------------------------
+%% Version 1: Using tail recursion with ++ operators
+skeleton_v1(List) ->
+    skeleton_v1(List, []).
+
+skeleton_v1([Head | Tail], TResult) when is_list(Head) ->
+    Result = skeleton_v1(Head),
+    skeleton_v1(Tail, TResult ++ [Result]);
+skeleton_v1([_Head | Tail], TResult) ->
+    skeleton_v1(Tail, TResult);
+skeleton_v1([], Result) -> Result.
+
+%% Version 2: Use tail recursion without ++ operators
+skeleton_v2(List) ->
+    skeleton_v2(List, []).
+
+skeleton_v2([Head | Tail], TResult) ->
+    case is_list(Head) of
+        true -> skeleton_v2(Tail, [skeleton_v2(Head) | TResult]);
+        false -> skeleton_v2(Tail, TResult)
+    end;
+skeleton_v2([], Result) -> lists:reverse(Result).
+
+%% Version 3: Use recursion
+skeleton_v3([Head | Tail]) when is_list(Head) ->
+    [skeleton_v3(Head) | skeleton_v3(Tail)];
+skeleton_v3([_Head | Tail]) ->
+    skeleton_v3(Tail);
+skeleton_v3([]) -> [].
+
+%% Version 4: Use list comprehension
+skeleton_v4(List) ->
+    [skeleton_v4(Try) || Try <- List, is_list(Try)].
+
+%% -----------------------------------------------------------------------------
+%% eliminate/2
+%%
+%% Desc: Returns the list List with all occurrences of the Value removed, at all
+%%       levels, retaining the list (bracket) structure.
+%% -----------------------------------------------------------------------------
+-spec eliminate(Value, List) -> Result when
+      Value :: any(),
+      List :: list(),
+      Result :: list().
+eliminate(Value, List) ->
+    eliminate(Value, List, []).
+
+eliminate(Value, [Head | Tail], TResult) when is_list(Head) ->
+    NResult = TResult ++ [eliminate(Value, Head, [])],
+    eliminate(Value, Tail, NResult);
+eliminate(Value, [Value | Tail], TResult) ->
+    eliminate(Value, Tail, TResult);
+eliminate(Value, [Head | Tail], TResult) ->
+    eliminate(Value, Tail, TResult ++ [Head]);
+eliminate(_, [], Result) -> Result.
+
+eliminate_v2(Value, List) ->
+    [case is_list(X) of
+         true -> eliminate_v2(Value, X);
+         false -> X
+     end || X <- List, X /= Value].
+
+%% -----------------------------------------------------------------------------
+%% quicksort/1
+%%
+%% Desc: Return a quicksorted version of the given list.
+%% -----------------------------------------------------------------------------
+-spec quicksort(List) -> SortedList when
+      List :: [integer()],
+      SortedList :: [integer()].
+quicksort([Pivot | Tail]) ->
+    {Smaller, Larger} = partition(Pivot, Tail, [], []),
+    quicksort(Smaller) ++ [Pivot] ++ quicksort(Larger);
+quicksort([]) -> [].
+
+partition(Check, [Head | Tail], Smaller, Larger) ->
+    case Head =< Check of
+        true -> partition(Check, Tail, [Head | Smaller], Larger);
+        false -> partition(Check, Tail, Smaller, [Head | Larger])
+    end;
+partition(_, [], Smaller, Larger) -> {Smaller, Larger}.
+
+%% -----------------------------------------------------------------------------
+%% sqrt/1
+%%
+%% Desc: Compute the square root of the positive number S, using Newton's
+%%       method. That is, choose some arbitrary number, say 2, as the initial
+%%       approximation R to the square root; then to get the next approximation,
+%%       compute the average of R and N/R. Continue until you have five
+%%       significant digits to the right of the decimal point. Do this by taking
+%%       an infinite series of approximations, and taking approximations until
+%%       they differ by less than 0.00001. Xo = 2 and Xn+1 = 1/2 (Xn + S/Xn).
+%% -----------------------------------------------------------------------------
+-spec sqrt(Integer) -> Float when
+      Integer :: integer(),
+      Float :: float().
+sqrt(S) ->
+    sqrt(S, 2).
+
+sqrt(S, Xn) ->
+    io:format("Xn: ~p~n", [Xn]),
+    Xn_plus_1 = 1/2 * (Xn + S/ Xn),
+    case Xn_plus_1 - Xn > 0.00001 orelse Xn - Xn_plus_1 > 0.00001 of
+        true -> sqrt(S, Xn_plus_1);
+        false ->
+            io:format("Xn: ~p~n", [Xn_plus_1])
+    end.
+
+%% -----------------------------------------------------------------------------
+%% sqrt_plus/1
+%%
+%% Desc: Same as above, but perform round estimation to find the initial
+%%       approxamation Xo first.
+%% -----------------------------------------------------------------------------
+-spec sqrt_plus(Integer) -> Float when
+      Integer :: integer(),
+      Float :: float().
+sqrt_plus(Integer) ->
+    Xo = round_estimate(Integer, 0),
+    sqrt(Integer, Xo).
+
+round_estimate(X, N) ->
+    X_plus = X / 100,
+    N_plus = N + 2,
+    case X_plus >= 1 andalso X_plus =< 100 of
+        true ->
+            case X_plus < 10 of
+                true -> 2 * pow(10, N_plus div 2);
+                false -> 6 * pow(10, N_plus div 2)
+            end;
+        false -> round_estimate(X_plus, N_plus)
+    end.
+
+pow(_X, 0) -> 1;
+pow(X, N) -> X * pow(X, N - 1).
+
+%% -----------------------------------------------------------------------------
+%% zap_gremlins/1
+%%
+%% Desc: Remove from the given text all invalid ASCII characters.
+%%       The Valid characters are decimal 10 (linefeed), 13 (carriage return)
+%%       and 32 through 126, inclusive. Remember that Erlang has no "character"
+%%       type; a "string" is just a list of ASCII values.
+%% -----------------------------------------------------------------------------
+-spec zap_gremlins(Text) -> Sentence when
+      Text :: [integer()],
+      Sentence :: string().
+zap_gremlins(Text) ->
+    Cond = fun(Char) when Char >= 32 andalso Char =< 126 orelse
+                          Char == 10 orelse Char == 13 ->
+                   true;
+              (_) -> false
+           end,
+    [Char || Char <- Text, Cond(Char)].
+
+%% -----------------------------------------------------------------------------
+%% rot_13/1
+%%
+%% Desc: Apply the rot-13 transformation to text.
+%%       This is a simple encoding in which each letter is replaced by the
+%%       letter 13 further along, end-around. Both uppercase and lowercase
+%%       letters should be rotated; other characters should be unaffected.
+%% -----------------------------------------------------------------------------
+-spec rot_13(Text) -> Encoded when
+      Text :: string(),
+      Encoded :: string().
+rot_13(Text) ->
+    Fun = fun(Char) when Char >= $a andalso Char =< ($z - 13) orelse
+                         Char >= $A andalso Char =< ($Z - 13) ->
+                  Char + 13;
+             (Char) when Char >= ($z - 13) orelse
+                         Char >= ($Z - 13) ->
+                  Char - 13;
+             (Char) -> Char
+          end,
+    [Fun(Char) || Char <- Text].
+
+%% -----------------------------------------------------------------------------
+%% tree/1
+%%
+%% Desc: Given a list (L) of values (V) which can be compared for equality.
+%%       Write a function that traverses the list from Left to Right.
+%%       The output of function is a tree (T) which each node is a 3-tuple
+%%       {X, V, Y} where V is the Value and X, Y are the Left, Right nodes.
+%%       Insertion of elements follow the following rules:
+%%       Starting at the root node, element greater than the current node
+%%       element go LEFT, element less than or equal to the current node
+%%       elements go RIGHT. Leafs have Left and Right element of 'NULL'.
+%% -----------------------------------------------------------------------------
+-spec tree(List) -> Tree when
+      List :: [integer()],
+      Tree :: tuple().
+tree(List) when is_list(List) andalso length(List) > 0 ->
+    tree(List, {});
+tree(_) -> exit(bad_input).
+
+tree([Head | Tail], Temp) ->
+    Element = {'NULL', Head, 'NULL'},
+    Tree = insert_tree(Element, Temp),
+    tree(Tail, Tree);
+tree([], Result) -> Result.
+
+insert_tree({_, Value, _} = Element, {Left, Root, Right})
+  when Value =< Root andalso Right == 'NULL' ->
+    {Left, Root, Element};
+insert_tree({_, Value, _} = Element, {Left, Root, Right})
+  when Value =< Root ->
+    {Left, Root, insert_tree(Element, Right)};
+insert_tree({_, Value, _} = Element, {Left, Root, Right})
+  when Value > Root andalso Left == 'NULL' ->
+    {Element, Root, Right};
+insert_tree({_, Value, _} = Element, {Left, Root, Right})
+  when Value > Root ->
+    {insert_tree(Element, Left), Root, Right};
+insert_tree(Element, {}) -> Element.
+
+%% -----------------------------------------------------------------------------
+%% neighbor_merge/1
+%%
+%% Desc: Give a list L of 2-tuple {V, V} representing intervals.
+%%       Write a function that traverses the list, Left to Right and merges
+%%       overlapping intervals that are neighbors.
+%% -----------------------------------------------------------------------------
+-spec neighbor_merge(List) -> NewList when
+      List :: [Elem],
+      Elem :: {integer(), integer()},
+      NewList :: [Elem].
+neighbor_merge(List) when is_list(List) andalso length(List) > 0 ->
+    neighbor_merge(List, []);
+neighbor_merge(_) -> exit(wrong_input).
+
+neighbor_merge([{FLeft, FRight} = First, {SLeft, SRight} = Second | Tail], Temp)
+  when FRight >= SLeft andalso FLeft =< SRight ->
+    neighbor_merge([find_merge(First, Second) | Tail], Temp);
+neighbor_merge([Head | Tail], Temp) ->
+    neighbor_merge(Tail, Temp ++ [Head]);
+neighbor_merge([], Result) -> Result.
+
+find_merge({FirstSmall, FirstBig}, {SecondSmall, SecondBig}) ->
+    Smallest = choose(FirstSmall =< SecondSmall, FirstSmall, SecondSmall),
+    Biggest = choose(FirstBig =< SecondBig, SecondBig, FirstBig),
+    {Smallest, Biggest}.
+
+choose(true, True, _) -> True;
+choose(false, _, False) -> False.
+
+%% -----------------------------------------------------------------------------
+%% percent/1
+%%
+%% Desc: Give a list of integer.
+%%       Write a function that calculate the percentage (integer) of each value
+%%       in the list. NOTE: make sure that the sum of all percentages = 100%
+%% -----------------------------------------------------------------------------
+-spec percent(List) -> NewList when
+      List :: [integer()],
+      NewList :: [integer()].
+percent(List) ->
+    percent(List, 100).
+
+percent(List, Total) ->
+    Sum = lists:sum(List),
+    Fun = fun(Elem) ->
+                  Round = round(Elem),
+                  {Round, Round - Elem}
+          end,
+    FPercents = [Fun((Elem / Sum) * Total) || Elem <- List],
+    try_round(FPercents, Total).
+
+try_round(Data, Total) ->
+    Percents = [Value || {Value, _} <- Data],
+    Sum = lists:sum(Percents),
+    %% io:format("Sum: ~p, ~w~n", [Sum, Percents]),
+    case Sum == Total of
+        true -> Percents;
+        false when Sum > Total -> reround(down, Data, Total);
+        false when Sum < Total -> reround(up, Data, Total)
+    end.
+
+reround(Type, Percents, Total) ->
+    MinOrMax = find_min_max(Type, Percents, 0),
+    NewPercents = reround(Type, Percents, MinOrMax, []),
+    try_round(NewPercents, Total).
+
+find_min_max(Type, [{_, Delta} | Tail], MinOrMax) ->
+    Cond = choose(Type == up, Delta < MinOrMax, Delta > MinOrMax),
+    case Cond of
+        true -> find_min_max(Type, Tail, Delta);
+        false -> find_min_max(Type, Tail, MinOrMax)
+    end;
+find_min_max(_, [], Result) -> Result.
+
+reround(Type, [{V, Delta} | Tail], Delta, Temp) ->
+    Temp ++
+        choose(Type == up, [{V + 1, Delta + 1}], [{V - 1, Delta - 1}]) ++
+        Tail;
+reround(Type, [Head | Tail], Delta, Temp) ->
+    reround(Type, Tail, Delta, Temp ++ [Head]).
+
+%% -----------------------------------------------------------------------------
+%% start_ring/2
+%%
+%% Desc: Start a ring of N processes, each process will send a message to next
+%%       process in the ring, each process shall send M message before
+%%       terminated.
+%% -----------------------------------------------------------------------------
+-spec start_ring(N, M) -> ok when
+      N :: integer(),
+      M :: integer().
+start_ring(N, M) ->
+    Fun = fun(S, Acc) ->
+                  ProcessFun = fun() -> ring_loop(S, M) end,
+                  Pid = spawn(ProcessFun),
+                  io:format("-> create process ~p: ~p~n", [S, Pid]),
+                  Acc ++ [Pid]
+          end,
+    Ring = lists:foldl(Fun, [], lists:seq(1, N)),
+    hd(Ring) ! Ring.
+
+ring_loop(S, Time) ->
+    receive
+        Ring when is_list(Ring) ->
+            NextRing = tl(Ring ++ [hd(Ring)]),
+            NextTime = Time - 1,
+            hd(NextRing) ! NextRing,
+            io:format(": process ~p --> send message ~p~n", [S, Time]),
+            case NextTime == 0 of
+                true -> io:format("* process ~p terminated!~n", [S]);
+                false -> ring_loop(S, NextTime)
+            end;
+        Others -> io:format(": process ~p -- received unexpected message ~p~n",
+                            [S, Others])
+    after 60000 -> io:format("Process terminated!~n")
+    end.
+
+%% -----------------------------------------------------------------------------
+%% send_math/1
+%%
+%% Desc: Send a math expression to math server, the math server perform the
+%%       expression and returns the answer.
+%% -----------------------------------------------------------------------------
+-define(MathServer, math_server).
+%% -define(MathServerTimeout, 20000).
+
+math() ->
+    io:format("*** start math application ***~n"),
+    loop().
+
+loop() ->
+    Input = io:get_line("math expression: "),
+    case string:tokens(Input, "\n") of
+        [] -> loop();
+        ["-q"] ->
+            io:format("result: ~p~n", [send_math("-q")]),
+            io:format("*** stop math application ***~n");
+        [String] ->
+            NewString = String ++ ".",
+            io:format("result: ~p~n", [send_math(NewString)]),
+            loop()
+    end.
+
+send_math(String) ->
+    verify_math_server(),
+    Pid = erlang:whereis(?MathServer),
+    Ref = make_ref(),
+    Pid ! {self(), Ref, String},
+    %% io:format("*** client: --> ~p~n", [String]),
+    receive
+        {Ref, Result} ->
+            %% io:format("*** client: <-- ~p~n", [Result]),
+            Result;
+        Other ->
+            io:format("*** client: <-- unexpected msg: ~p~n", [Other])
+    %% after 5000 ->
+    %%         io:format("*** client: timeout~n")
+    end.
+
+verify_math_server() ->
+    case check_math_server() of
+        true -> ok;
+        false ->
+            ProcessFun = fun() -> math_loop() end,
+            Pid = spawn(ProcessFun),
+            true = erlang:register(?MathServer, Pid),
+            io:format("*** client: start math server: ~p~n", [Pid])
+    end.
+
+check_math_server() ->
+    case whereis(?MathServer) of
+        undefined -> false;
+        Pid -> is_process_alive(Pid)
+    end.
+
+math_loop() ->
+    receive
+        {Pid, Ref, "-q"} ->
+            Pid ! {Ref, "server is terminated!"};
+        {Pid, Ref, String} ->
+            case catch handle_math(String) of
+                {'EXIT', Reason} -> Pid ! {Ref, Reason};
+                Answer -> Pid ! {Ref, Answer}
+            end,
+            math_loop()
+    %% after ?MathServerTimeout ->
+    %%         io:format("*** server: hello... math server terminated~n")
+    end.
+
+handle_math(String) ->
+    {ok, Tokens, _} = erl_scan:string(String),
+    {ok, [Expr]} = erl_parse:parse_exprs(Tokens),
+    {integer, _, R} = do_math(Expr),
+    R.
+
+do_math({op, _, Op, {integer, _, Number1}, {integer, _, Number2}}) ->
+    R = if Op == '+' -> Number1 + Number2;
+           Op == '-' -> Number1 - Number2;
+           Op == '*' -> Number1 * Number2;
+           Op == '/' -> Number1 / Number2
+        end,
+    {integer, pos, R};
+do_math({op, Pos, Op, Exp, {integer, _, _} = Integer}) ->
+    do_math({op, Pos, Op, do_math(Exp), Integer});
+do_math({op, Pos, Op, {integer, _, _} = Integer, Exp}) ->
+    do_math({op, Pos, Op, Integer, do_math(Exp)});
+do_math({op, Pos, Op, Exp1, Exp2}) ->
+    do_math({op, Pos, Op, do_math(Exp1), do_math(Exp2)}).
+
+%% -----------------------------------------------------------------------------
+%% check_perf/3
+%% compare_perf/4
+%%
+%% Desc: Use those functions to check performance of function or compare the
+%%       performances of two functions.
+%% -----------------------------------------------------------------------------
+check_perf(Time, Func, Args) ->
+    Fun = fun(_, T) ->
+                  {E, _} = timer:tc(?MODULE, Func, Args),
+                  T + E
+          end,
+    S = my_foldl("Testing...", Fun, 0, lists:seq(1, Time)),
+    S / Time.
+
+compare_perf(Time, Func1, Func2, Args) ->
+    Fun = fun(_, {T1, T2}) ->
+                  {Ex1, _} = timer:tc(?MODULE, Func1, Args),
+                  {Ex2, _} = timer:tc(?MODULE, Func2, Args),
+                  {T1 + Ex1, T2 + Ex2}
+          end,
+    {Exe1, Exe2} = my_foldl("Testing...", Fun, {0, 0}, lists:seq(1, Time)),
+    {Exe1 / Time, Exe2 / Time}.
+
+mf(_Fun, Acc, [], {ListLen, Star, ListLen}) ->
+    io:format("~s~n", [string:chars($*, 80 - 2 - Star)]),
+    Acc;
+mf(Fun, Acc, [H | T], {Time, Star, ListLen}) ->
+    StarNum = round((Time / ListLen) * (80 - 2)) - Star,
+    io:format("~s", [string:chars($*, StarNum)]),
+    mf(Fun, Fun(H, Acc), T, {Time + 1, Star + StarNum, ListLen}).
+
+my_foldl(Title, F, Accu, [Hd|Tail] = List) ->
+    io:format("[" ++ string:centre(Title, 80 - 2) ++ "]~n "),
+    ListLen = length(List),
+    mf(F, F(Hd, Accu), Tail, {1, 0, ListLen}).
+
+my_foldl(F, Accu, List) ->
+    lists:foldl(F, Accu, List).

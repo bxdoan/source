@@ -1,0 +1,3 @@
+
+
+-record(doan, {a, b}).
