@@ -1,5 +1,10 @@
 -module(foo).
+-compile(no_warn_export_all).
 -compile(export_all).
+
+test(A, B)->
+	[] /= [X || X <- A, Y <- B, X == Y].
+
 
 start()->
 	io:format("A   B   C   Turns~n"),
@@ -48,20 +53,20 @@ students(X, Y, Z, Turn) ->
 
 teachergivecandy(Student1Total, Student2Total, Student3Total, TurnCount) ->
     io:format("hello1"),
-    if 
-    	Student1Total rem 2 == 1 -> 
+    if
+    	Student1Total rem 2 == 1 ->
             Student1FinalTotal = Student1Total + 1; %Student1FinalTotal = Student1Total + 1,
         true ->
             Student1FinalTotal = Student1Total
     end,
-    if 
-        Student2Total rem 2 == 1 -> 
+    if
+        Student2Total rem 2 == 1 ->
             Student2FinalTotal = Student2Total + 1; %Student1FinalTotal = Student1Total + 1,
         true ->
             Student2FinalTotal = Student2Total
     end,
-    if 
-        Student3Total rem 2 == 1 -> 
+    if
+        Student3Total rem 2 == 1 ->
             Student3FinalTotal = Student3Total + 1; %Student1FinalTotal = Student1Total + 1,
         true ->
             Student3FinalTotal = Student3Total

@@ -104,10 +104,10 @@ def minion_game(string):
 # AD
 # 'setdefault' method returns the key value available in the dictionary and if given
 # key is not available then it will provided default value and adds it to the dictionary
-# def merge_the_tools(string, k):
-for part in zip(*[iter(string)] * k):
-    d = dict()
-    print(''.join([ d.setdefault(c, c) for c in part if c not in d ]))
+def merge_the_tools(string, k):
+    for part in zip(*[iter(string)] * k):
+        d = dict()
+        print(''.join([ d.setdefault(c, c) for c in part if c not in d ]))
 
 if __name__ == '__main__':
     s, k = input(), int(input())
