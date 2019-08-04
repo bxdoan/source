@@ -1,5 +1,16 @@
 defmodule Doan do
-
+use Bitwise
+  def test(code, key) do
+    value = code &&& key
+    IO.puts "+++++"
+    IO.puts "key:#{key},code:#{code},code &&& key:#{value},value == key:"
+    case value do
+      key ->
+        IO.puts "value:#{value}, key:#{key}, value is true"
+      _ ->
+        IO.puts "value:#{value}, key:#{key}, value is false"
+    end
+  end
 
 def start() do
   current = self()

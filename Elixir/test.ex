@@ -1,5 +1,14 @@
 defmodule Doan do
 
+def test(code, key) do
+  value = code &&& key
+  IO.puts "+++++"
+  IO.puts "key:#{key},code:#{code},code &&& key:#{value},value == key:#{value == key}"
+  case value do
+    key -> IO.puts "value is true"
+    _ -> IO.puts "value is false"
+  end
+end
 
 def start() do
   current = self()
