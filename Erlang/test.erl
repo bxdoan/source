@@ -26,3 +26,30 @@ dispatch(T) when T>3 ->
         end,
     if (Val+1)==67 -> "lalalal" end;
 dispatch(_)->"no result".
+
+
+-record(man,{name,
+             age,
+             children=[]}).
+-record(child,{
+    name,
+    age,
+    sex
+}).
+
+makeFam()->
+    #man{name="Adrian",
+         age=33,
+         children=[#child{name="Daniel",age=33,sex="Male"},
+                   #child{name="Chris" ,sex="Male"},
+                   #child{name="Anne",age=33,sex="Female"}]
+        }.
+
+
+fatherAndSons(Man#man{children=Ch})->{Man,[Elem|| Elem<-Ch,isMale(Elem) == true]}.
+
+isMale(#child{sex = Y})->
+    case Y of
+        "Male"->true;
+         _ ->false
+    end.
