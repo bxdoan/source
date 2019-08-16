@@ -1,0 +1,12 @@
+-- Query a count of the number of cities in CITY having a Population larger than .
+-- Input Format
+-- The CITY table is described as follows:
+--       CITY
+-- Field          Type
+-- ID             NUMBER
+-- NAME           Varchar2(17)
+-- COUNTRYCODE    Varchar2(3)
+-- DISTRICT       Varchar2(20)
+-- POPULATIONS    NUMBER
+select count(name) from city where population > 100000
+-- 6 

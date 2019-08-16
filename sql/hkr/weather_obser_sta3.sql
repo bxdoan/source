@@ -1,0 +1,22 @@
+-- Query a list of CITY names from STATION with even ID numbers only.
+-- You may print the results in any order, but must exclude duplicates from your answer.
+-- Input Format
+-- The STATION table is described as follows:
+--       STATION
+-- Field          Type
+-- ID             NUMBER
+-- CITY           Varchar2(21)
+-- STATE          Varchar2(2)
+-- LAT_N          NUMBER
+-- LONG_W         NUMBER
+-- where LAT_N is the northern latitude and LONG_W is the western longitude.
+select distinct(city)from station where MOD( id, 2 ) = 0;
+-- Kissee Mills
+-- Loma Mar
+-- Tipton
+-- Glencoe
+-- Chignik Lagoon
+-- Albany
+-- Manchester
+-- Cahone
+-- Bowdon
