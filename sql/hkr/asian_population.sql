@@ -1,0 +1,31 @@
+-- Given the CITY and COUNTRY tables, query the sum of the populations of all
+-- cities where the CONTINENT is 'Asia'.
+-- Note: CITY.CountryCode and COUNTRY.Code are matching key columns.
+-- Input Format
+--       CITY
+-- Field          Type
+-- ID             NUMBER
+-- NAME           Varchar2(17)
+-- COUNTRYCODE    Varchar2(3)
+-- DISTRICT       Varchar2(20)
+-- POPULATIONS    NUMBER
+--       COUNTRY
+-- Field          Type
+-- CODE           Varchar2(3)
+-- NAME           Varchar2(44)
+-- CONTINENT      Varchar2(13)
+-- REGION         Varchar2(25)
+-- SURFACEAREA    NUMBER
+-- INDEPYEAR      Varchar2(4)
+-- POPULATION     NUMBER
+-- LIFEEXPECTANCY Varchar2(4)
+-- GNP            NUMBER
+-- GNPOLD         Varchar2(9)
+-- LOCALNAME      Varchar2(44)
+-- GOVERNMENTFORM Varchar2(44)
+-- HEADOFSTATE    Varchar2(4)
+-- CODE2          Varchar2(2)
+select sum(city.population) from city inner join country on
+country.code = city.countrycode
+where country.continent = 'Asia';
+-- 27028484

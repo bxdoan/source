@@ -1,0 +1,8 @@
+id,name,department,birthday month,salary
+1,John Smith,Accounting,November,2000
+2,Erica Meyers,IT,March,8000
+3,Erica Meyers,IT,March,5000
+4,Erica Meyers,IT,March,7000
+5,Erica Meyers,IT,March,6000
+6,Erica Meyers,IT,March,1000
+7,Erica Meyers,IT,March,10000

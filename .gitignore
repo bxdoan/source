@@ -2,3 +2,8 @@
 
 # If the VM crashes, it generates a dump, let's ignore it too.
 erl_crash.dump
+
+# Ignore venv files for restful api
+/python/python_rest/venv/
+
+*.pyc
