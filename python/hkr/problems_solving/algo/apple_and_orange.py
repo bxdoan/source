@@ -29,6 +29,8 @@ import sys
 #  as our second line of output.
 # Complete the countApplesAndOranges function below.
 def countApplesAndOranges(s, t, a, b, apples, oranges):
+    print(sum([1 for x in apples if (x + a) >= s and (x + a) <= t]))
+    print(sum([1 for x in oranges if (x + b) >= s and (x + b) <= t]))
 
 if __name__ == '__main__':
     st = input().split()
@@ -44,6 +46,7 @@ if __name__ == '__main__':
     b = int(ab[1])
 
     mn = input().split()
+
     m = int(mn[0])
 
     n = int(mn[1])
